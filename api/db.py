@@ -40,7 +40,7 @@ class DB:
 
     def close(self):
         if self.cursor is not None:
-            print('#########################')
+            print('@@@@@@@@@@@@@@@@@@@@@@@@@')
             print(f'closing connection for: {self.server}')
-            print('#########################')
+            print('@@@@@@@@@@@@@@@@@@@@@@@@@')
             self.cursor.close()

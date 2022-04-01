@@ -24,6 +24,14 @@ class AuthHeaderMiddleware:
 
         # fetch and decode the authorization token
         auth_header = request.headers.get('Authorization')
+        if auth_header is None:
+            res = Response(
+                json.dumps({'error': 'Auth token missing'}),
+                mimetype='application/json',
+                status=400
+            )
+            return res(environ, start_response)
+
         try:
             token = decrypt(auth_header.encode(), self.auth_key.encode())
         except ValueError:

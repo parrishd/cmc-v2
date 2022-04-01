@@ -49,9 +49,16 @@ def create_app(test_config=None):
     app.wsgi_app = DBInitMiddleware(app.wsgi_app, dbs)
     app.wsgi_app = AuthHeaderMiddleware(app.wsgi_app, auth_key)
 
-    from . import auth
+    from .service import auth
     auth.login(app)
     auth.test(app)
+
+    from .service.integration import benthic as benthic_integration
+    # benthic.service(app, roles=[])
+    benthic_integration.BenthicIntegrationService(app, roles=[])
+
+    # from .service.integration.waterquality import waterquality
+    # waterquality.service(app, [])  # todo: pass service roles
 
     # a simple page that says hello
     # @app.route('/hello')

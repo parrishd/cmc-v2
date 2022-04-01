@@ -46,12 +46,13 @@ def login(app):
         if not user['email_confirmed']:
             return jsonify({'error': 'user: email confirmation', 'code': '0x03'}), 403
 
+        # todo: load roles
         # todo: validate password
         # decoded = base64.b64decode(user['password_hash'])
         # print(decoded)
         # print(len(decoded))
 
-        exp = datetime.now() + timedelta(minutes=5)
+        exp = datetime.now() + timedelta(minutes=60)
         token_data = {'id': user['id'], 'exp': exp.isoformat()}
         token = encrypt(
             json.dumps(token_data).encode('utf-8'),
