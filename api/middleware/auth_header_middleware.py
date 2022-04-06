@@ -1,7 +1,9 @@
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from werkzeug.wrappers import Request, Response
-from paseto.protocol.version2 import decrypt
+import paseto
+from paseto.keys.symmetric_key import SymmetricKey
+from paseto.protocols.v4 import ProtocolVersion4
 
 
 class AuthHeaderMiddleware:
@@ -33,7 +35,14 @@ class AuthHeaderMiddleware:
             return res(environ, start_response)
 
         try:
-            token = decrypt(auth_header.encode(), self.auth_key.encode())
+            #token = decrypt(auth_header.encode(), self.auth_key.encode())
+            sk = SymmetricKey(key_material=self.auth_key.encode(), protocol=ProtocolVersion4)
+            token = paseto.parse(
+                key=sk,
+                purpose='local',
+                token=auth_header,
+            )
+            print(token)
         except ValueError:
             res = Response(
                 json.dumps({'error': 'Auth token decode failed'}),
@@ -43,7 +52,8 @@ class AuthHeaderMiddleware:
             return res(environ, start_response)
 
         # validate required fields are in token
-        token_data = json.loads(token)
+        # token_data = json.loads(token)
+        token_data = token['message']
         if 'id' not in token_data or 'exp' not in token_data:
             res = Response(
                 json.dumps({'error': 'Auth token invalid'}),
@@ -53,8 +63,9 @@ class AuthHeaderMiddleware:
             return res(environ, start_response)
 
         # verify token has not expired
-        exp = datetime.strptime(token_data['exp'], "%Y-%m-%dT%H:%M:%S.%f")
-        if datetime.now() > exp:
+        # exp = datetime.strptime(token_data['exp'], datetime.isoformat)
+        exp = datetime.fromisoformat(token_data['exp'])
+        if datetime.now(timezone.utc) > exp:
             res = Response(
                 json.dumps({'error': 'Auth token expired'}),
                 mimetype='application/json',

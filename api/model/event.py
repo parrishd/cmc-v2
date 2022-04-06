@@ -1,14 +1,14 @@
 class Event:
-    Id = None
-    DateTime = None
-    Project = None
-    Comments = None
-    StationId = None
-    GroupId = None
-    CreatedBy = None
-    CreatedDate = None
-    ModifiedBy = None
-    ModifiedDate = None
+    # Id = None
+    # DateTime = None
+    # Project = None
+    # Comments = None
+    # StationId = None
+    # GroupId = None
+    # CreatedBy = None
+    # CreatedDate = None
+    # ModifiedBy = None
+    # ModifiedDate = None
 
     def __init__(self, **kwargs):
         for key, value in kwargs.items():

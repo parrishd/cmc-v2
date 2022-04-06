@@ -1,38 +1,38 @@
 class AspNetUser:
-    Id = None
-    FirstName = None
-    LastName = None
-    Status = None
-    VolunteerHours = None
-    GroupUpdatedDateTime = None
-    ProfileImage = None
-    HomePhone = None
-    CellPhone = None
-    EmergencyPhone = None
-    AddressFirst = None
-    AddressSecond = None
-    City = None
-    State = None
-    Zip = None
-    GroupId = None
-    Email = None
-    EmailConfirmed = None
-    PasswordHash = None
-    SecurityStamp = None
-    PhoneNumber = None
-    PhoneNumberConfirmed = None
-    TwoFactorEnabled = None
-    LockoutEndDateUtc = None
-    LockoutEnabled = None
-    AccessFailedCount = None
-    UserName = None
-    Code = None
-    CreatedBy = None
-    CreatedDate = None
-    ModifiedBy = None
-    ModifiedDate = None
-    CertificationDate = None
-    HasBeenActivated = None
+    # Id = None
+    # FirstName = None
+    # LastName = None
+    # Status = None
+    # VolunteerHours = None
+    # GroupUpdatedDateTime = None
+    # ProfileImage = None
+    # HomePhone = None
+    # CellPhone = None
+    # EmergencyPhone = None
+    # AddressFirst = None
+    # AddressSecond = None
+    # City = None
+    # State = None
+    # Zip = None
+    # GroupId = None
+    # Email = None
+    # EmailConfirmed = None
+    # PasswordHash = None
+    # SecurityStamp = None
+    # PhoneNumber = None
+    # PhoneNumberConfirmed = None
+    # TwoFactorEnabled = None
+    # LockoutEndDateUtc = None
+    # LockoutEnabled = None
+    # AccessFailedCount = None
+    # UserName = None
+    # Code = None
+    # CreatedBy = None
+    # CreatedDate = None
+    # ModifiedBy = None
+    # ModifiedDate = None
+    # CertificationDate = None
+    # HasBeenActivated = None
 
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
@@ -45,7 +45,7 @@ def get_asp_net_user_by(db, fields, by, value):
             SELECT 
                 {0}
             FROM 
-                dbo.AspNetUser
+                dbo.AspNetUsers
             WHERE
                 {1} = ?;
         '''.format(', '.join(fields), by)

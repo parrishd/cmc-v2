@@ -1,13 +1,13 @@
 class BenthicCondition:
-    Id = None
-    Code = None
-    Name = None
-    Description = None
-    isCategorical = None
-    Status = None
-    Order = None
-    Method = None
-    isNumeric = None
+    # Id = None
+    # Code = None
+    # Name = None
+    # Description = None
+    # isCategorical = None
+    # Status = None
+    # Order = None
+    # Method = None
+    # isNumeric = None
 
     def __init__(self, **kwargs):
         for key, value in kwargs.items():

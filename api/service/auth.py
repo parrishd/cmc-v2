@@ -1,9 +1,12 @@
 import json
 import base64
 import collections
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from flask import jsonify, request
-from paseto.protocol.version2 import encrypt
+# from paseto.protocol.version2 import encrypt
+import paseto
+from paseto.keys.symmetric_key import SymmetricKey
+from paseto.protocols.v4 import ProtocolVersion4
 
 
 def login(app):
@@ -52,14 +55,22 @@ def login(app):
         # print(decoded)
         # print(len(decoded))
 
-        exp = datetime.now() + timedelta(minutes=60)
+        exp = datetime.now(timezone.utc) + timedelta(seconds=3600)
         token_data = {'id': user['id'], 'exp': exp.isoformat()}
-        token = encrypt(
-            json.dumps(token_data).encode('utf-8'),
-            auth_key.encode()
+        # token = encrypt(
+        #     json.dumps(token_data).encode('utf-8'),
+        #     auth_key.encode()
+        # )
+        # my_key = SymmetricKey.generate(protocol=ProtocolVersion4)
+        sk = SymmetricKey(key_material=auth_key.encode(), protocol=ProtocolVersion4)
+        token = paseto.create(
+            key=sk,
+            purpose='local',
+            claims=token_data,
+            exp_seconds=3600
         )
 
-        resp = {'token': token.decode(), 'exp': exp.isoformat()}
+        resp = {'token': token, 'exp': exp.isoformat()}
         return jsonify(resp), 200
 
 
@@ -72,8 +83,6 @@ def test(app):
         # print(email)
         # if not db.connect():
         #     return jsonify({'error': 'unable to connect to db'}), 500
-
-
 
         sql = """
             SELECT 

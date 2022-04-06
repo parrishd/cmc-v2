@@ -1,17 +1,17 @@
 class BenthicParameter:
-    Id = None
-    Code = None
-    Name = None
-    Method = None
-    Comments = None
-    BottomType = None
-    allarmGroup = None
-    tolerant = None
-    noninsects = None
-    iwlRockyGroup = None
-    iwlMuddyGroup = None
-    allarmOrder = None
-    iwlOrder = None
+    # Id = None
+    # Code = None
+    # Name = None
+    # Method = None
+    # Comments = None
+    # BottomType = None
+    # allarmGroup = None
+    # tolerant = None
+    # noninsects = None
+    # iwlRockyGroup = None
+    # iwlMuddyGroup = None
+    # allarmOrder = None
+    # iwlOrder = None
 
     def __init__(self, **kwargs):
         for key, value in kwargs.items():

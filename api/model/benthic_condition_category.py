@@ -1,10 +1,10 @@
 class BenthicConditionCategory:
-    Id = None
-    ConditionId = None
-    Category = None
-    CategoryText = None
-    Order = None
-    Comments = None
+    # Id = None
+    # ConditionId = None
+    # Category = None
+    # CategoryText = None
+    # Order = None
+    # Comments = None
 
     def __init__(self, **kwargs):
         for key, value in kwargs.items():

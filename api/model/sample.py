@@ -1,17 +1,17 @@
 class Sample:
-    Id = None
-    Value = None
-    Depth = None
-    SampleId = None
-    Comments = None
-    EventId = None
-    ParameterId = None
-    QaFlagId = None
-    QualifierId = None
-    CreatedBy = None
-    CreatedDate = None
-    ModifiedBy = None
-    ModifiedDate = None
+    # Id = None
+    # Value = None
+    # Depth = None
+    # SampleId = None
+    # Comments = None
+    # EventId = None
+    # ParameterId = None
+    # QaFlagId = None
+    # QualifierId = None
+    # CreatedBy = None
+    # CreatedDate = None
+    # ModifiedBy = None
+    # ModifiedDate = None
 
     def __init__(self, **kwargs):
         for key, value in kwargs.items():

@@ -1,28 +1,28 @@
 class Station:
-    Id = None
-    Name = None
-    NameLong = None
-    Lat = None
-    Long = None
-    Cbseg = None
-    WaterBody = None
-    Description = None
-    Datum = None
-    CityCounty = None
-    Tidal = None
-    Comments = None
-    Code = None
-    Status = None
-    CreatedBy = None
-    CreatedDate = None
-    ModifiedBy = None
-    ModifiedDate = None
-    StationSamplingMethodId = None
-    Fips = None
-    Huc12 = None
-    State = None
-    Huc6Name = None
-    AltCode = None
+    # Id = None
+    # Name = None
+    # NameLong = None
+    # Lat = None
+    # Long = None
+    # Cbseg = None
+    # WaterBody = None
+    # Description = None
+    # Datum = None
+    # CityCounty = None
+    # Tidal = None
+    # Comments = None
+    # Code = None
+    # Status = None
+    # CreatedBy = None
+    # CreatedDate = None
+    # ModifiedBy = None
+    # ModifiedDate = None
+    # StationSamplingMethodId = None
+    # Fips = None
+    # Huc12 = None
+    # State = None
+    # Huc6Name = None
+    # AltCode = None
 
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
