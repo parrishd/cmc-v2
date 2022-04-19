@@ -4,7 +4,7 @@ from werkzeug.wrappers import Request, Response
 import paseto
 from paseto.keys.symmetric_key import SymmetricKey
 from paseto.protocols.v4 import ProtocolVersion4
-
+from paseto.exceptions import PasetoException
 
 class AuthHeaderMiddleware:
 
@@ -46,6 +46,13 @@ class AuthHeaderMiddleware:
         except ValueError:
             res = Response(
                 json.dumps({'error': 'Auth token decode failed'}),
+                mimetype='application/json',
+                status=400
+            )
+            return res(environ, start_response)
+        except PasetoException:
+            res = Response(
+                json.dumps({'error': 'Auth token exception'}),
                 mimetype='application/json',
                 status=400
             )

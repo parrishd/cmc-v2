@@ -3,7 +3,7 @@ import pyodbc
 
 from datetime import datetime
 from flask import jsonify, request
-from api.util import number
+from api.util import number, datetimeutil
 from api.model import \
     group, \
     station, \
@@ -88,23 +88,24 @@ class BenthicIntegrationService:
         if 'datetime' not in data:
             errors.append('invalid data set: datetime is required')
         else:
-            dateTime = None
-            formats = [
-                '%m/%d/%Y %I:%M %p',  # current format 1
-                '%m/%d/%Y %H:%M %p',  # current format 2
-                '%Y-%m-%d %H:%M:%S',  # iso8601 formats
-                '%Y-%m-%d %H:%M:%S.%f',  # iso8601 formats
-                '%Y-%m-%dT%H:%M:%S.%f',  # iso8601 formats
-                '%Y-%m-%dT%H:%M:%S.%f',  # iso8601 formats
-                '%Y-%m-%dT%H:%M:%S.%f%z',  # iso8601 formats
-            ]
-
-            for f in formats:
-                try:
-                    dateTime = datetime.strptime(data['datetime'], f)
-                    break
-                except ValueError:
-                    pass
+            dateTime = datetimeutil.getdatetime(data['datetime'])
+            # dateTime = None
+            # formats = [
+            #     '%m/%d/%Y %I:%M %p',  # current format 1
+            #     '%m/%d/%Y %H:%M %p',  # current format 2
+            #     '%Y-%m-%d %H:%M:%S',  # iso8601 formats
+            #     '%Y-%m-%d %H:%M:%S.%f',  # iso8601 formats
+            #     '%Y-%m-%dT%H:%M:%S.%f',  # iso8601 formats
+            #     '%Y-%m-%dT%H:%M:%S.%f',  # iso8601 formats
+            #     '%Y-%m-%dT%H:%M:%S.%f%z',  # iso8601 formats
+            # ]
+            #
+            # for f in formats:
+            #     try:
+            #         dateTime = datetime.strptime(data['datetime'], f)
+            #         break
+            #     except ValueError:
+            #         pass
 
             if dateTime is None:
                 errors.append('invalid data: datetime format is invalid')
@@ -132,7 +133,7 @@ class BenthicIntegrationService:
 
         if len(tallies) == 0 and len(conditions) == 0 and len(monitors):
             errors.append('event must have at least one of the following sample sets with sample data:'
-                          'tally_samples, condition_samples, monitor_samples')
+                          'tallies, conditions, monitors')
 
         # return any errors at this point. no need to process any further
         if len(errors) > 0:
@@ -216,16 +217,16 @@ class BenthicIntegrationService:
                 else:
                     condSample.paramId = bc.Id
 
-                # check if valid categorically
-                if bc.isCategorical:
-                    bcc = benthic_condition_category.get_benthic_condition_category_by_condition_id_category(
-                        db,
-                        ['Id'],
-                        bc.Id,
-                        c['value']
-                    )
-                    if bcc is None:
-                        errors.append(f'condition {idx}: invalid benthic condition value')
+                    # check if valid categorically
+                    if bc.isCategorical:
+                        bcc = benthic_condition_category.get_benthic_condition_category_by_condition_id_category(
+                            db,
+                            ['Id'],
+                            bc.Id,
+                            c['value']
+                        )
+                        if bcc is None:
+                            errors.append(f'condition {idx}: invalid benthic condition value')
 
                 # check if this sample already exists in data set and if not append it to the event tallies
                 if condSample.paramId is not None:
@@ -281,6 +282,7 @@ class BenthicIntegrationService:
     @staticmethod
     def insert(bise, db):
         errors = []
+        eventId = None
 
         db.autocommit = False
 

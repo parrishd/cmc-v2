@@ -39,3 +39,41 @@ def get_event_by_group_station_datetime(db, fields, gid, sid, datetime):
         idx += 1
 
     return Event(**kwargs)
+
+
+def insert_event(db, event):
+    sql = '''
+            INSERT INTO dbo.Events (
+                DateTime,
+                Comments,
+                StationId,
+                GroupId,
+                CreatedBy,
+                CreatedDate,
+                ModifiedBy,
+                ModifiedDate
+            ) VALUES(
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?
+            )
+        '''
+
+    db.cursor.execute(
+        sql,
+        event.DateTime,
+        event.Comments,
+        event.StationId,
+        event.GroupId,
+        event.CreatedBy,
+        event.CreatedDate,
+        event.ModifiedBy,
+        event.ModifiedDate)
+
+    db.cursor.execute('SELECT IDENT_CURRENT(\'dbo.Events\')')
+    return db.cursor.fetchone()[0]

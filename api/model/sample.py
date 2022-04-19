@@ -42,3 +42,54 @@ def get_sample_by(db, fields, by, value):
 
     return Sample(**kwargs)
 
+
+def insert_sample(db, wqs):
+    sql = '''
+            INSERT INTO dbo.Samples (
+                Value,
+                Depth,
+                SampleId,
+                Comments,
+                EventId,
+                ParameterId,
+                ProblemId,
+                QaFlagId,
+                QualifierId,
+                CreatedBy,
+                CreatedDate,
+                ModifiedBy,
+                ModifiedDate
+            ) VALUES(
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?
+            )
+        '''
+
+    db.cursor.execute(
+        sql,
+        wqs.Value,
+        wqs.Depth,
+        wqs.SampleId,
+        wqs.Comments,
+        wqs.EventId,
+        wqs.ParameterId,
+        wqs.ProblemId,
+        wqs.QaFlagId,
+        wqs.QualifierId,
+        wqs.CreatedBy,
+        wqs.CreatedDate,
+        wqs.ModifiedBy,
+        wqs.ModifiedDate)
+
+    return True
