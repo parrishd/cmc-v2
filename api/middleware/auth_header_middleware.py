@@ -6,6 +6,7 @@ from paseto.keys.symmetric_key import SymmetricKey
 from paseto.protocols.v4 import ProtocolVersion4
 from paseto.exceptions import PasetoException
 
+
 class AuthHeaderMiddleware:
 
     def __init__(self, app, auth_key):
@@ -35,7 +36,6 @@ class AuthHeaderMiddleware:
             return res(environ, start_response)
 
         try:
-            #token = decrypt(auth_header.encode(), self.auth_key.encode())
             sk = SymmetricKey(key_material=self.auth_key.encode(), protocol=ProtocolVersion4)
             token = paseto.parse(
                 key=sk,
@@ -61,7 +61,7 @@ class AuthHeaderMiddleware:
         # validate required fields are in token
         # token_data = json.loads(token)
         token_data = token['message']
-        if 'id' not in token_data or 'exp' not in token_data:
+        if 'id' not in token_data or 'exp' not in token_data or 'roles' not in token_data:
             res = Response(
                 json.dumps({'error': 'Auth token invalid'}),
                 mimetype='application/json',
@@ -82,6 +82,7 @@ class AuthHeaderMiddleware:
 
         # success call
         environ['user_id'] = token_data['id']
+        environ['roles'] = token_data['roles']
         environ['auth_key'] = self.auth_key
         return self.app(environ, start_response)
 

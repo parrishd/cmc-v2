@@ -4,6 +4,7 @@ import pyodbc
 from datetime import datetime
 from flask import jsonify, request
 from api.util import number, datetimeutil
+from api.middleware import role_validation
 from api.model import \
     group, \
     station, \
@@ -17,6 +18,7 @@ from api.model import \
     benthic_condition_category
 
 
+
 class BenthicIntegrationService:
     roles = []
 
@@ -26,12 +28,18 @@ class BenthicIntegrationService:
 
     def integration_benthic(self):
         # todo: validate roles
+        ur = request.environ['roles']
+        print("$$$$$$$$$$$$$$")
+        print(ur)
+        print("$$$$$$$$$$$$$$")
+        if not role_validation.validate(self.roles, ur):
+            return jsonify({'status': 403, 'error': 'permission denied'}), 403
 
         if request.method == 'POST':
             return self.post(request.json)
 
         resp = {'status': 400, 'error': 'method not allowed'}
-        return jsonify(resp), 200
+        return jsonify(resp), 400
 
     def post(self, data):
         # fetch our authed user

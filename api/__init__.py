@@ -54,7 +54,7 @@ def create_app(test_config=None):
     auth.test(app)
 
     from .service.integration import benthic as benthic_integration
-    benthic_integration.BenthicIntegrationService(app, roles=[])
+    benthic_integration.BenthicIntegrationService(app, roles=['Admin', 'Coordinator'])
 
     from .service.integration import waterquality as waterquality_integration
     waterquality_integration.WaterQualityIntegrationService(app, roles=[])

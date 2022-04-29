@@ -1,5 +1,7 @@
 import json
 import base64
+import os
+import hashlib
 import collections
 from datetime import datetime, timedelta, timezone
 from flask import jsonify, request
@@ -7,6 +9,7 @@ from flask import jsonify, request
 import paseto
 from paseto.keys.symmetric_key import SymmetricKey
 from paseto.protocols.v4 import ProtocolVersion4
+from api.model import  flask_user, asp_net_user, asp_net_user_role
 
 
 def login(app):
@@ -17,51 +20,54 @@ def login(app):
         data = request.json
         print(data)
 
-        # fetch user from database by email
-        sql = """
-            SELECT 
-                Id, 
-                Status,
-                EmailConfirmed, 
-                PasswordHash
-            FROM 
-                dbo.AspNetUsers
-            WHERE
-                UserName = ?;
-        """
-        db.cursor.execute(sql, data['email'])
-        q = db.cursor.fetchone()
-        if q is None:
+        # verify user account
+        anu = asp_net_user.get_asp_net_user_by(
+            db,
+            ['Id', 'Status', 'EmailConfirmed'],
+            'UserName',
+            data['email'])
+
+        if anu is None:
             return jsonify({'error': 'user: not found', 'code': '0x01'}), 404
 
-        # create a user dictionary
-        user = collections.OrderedDict()
-        user['id'] = q[0]
-        user['status'] = q[1]
-        user['email_confirmed'] = q[2]
-        user['password_hash'] = q[3]
-
         # check user status
-        if not user['status']:
+        if not anu.Status:
             return jsonify({'error': 'user: invalid status', 'code': '0x02'}), 403
 
         # check email confirmed
-        if not user['email_confirmed']:
+        if not anu.EmailConfirmed:
             return jsonify({'error': 'user: email confirmation', 'code': '0x03'}), 403
 
-        # todo: load roles
-        # todo: validate password
-        # decoded = base64.b64decode(user['password_hash'])
-        # print(decoded)
-        # print(len(decoded))
+        # verify user account
+        fu = flask_user.get_flask_user_by(
+            db,
+            ['Id', 'Email', 'PasswordHash'],
+            'Id',
+            anu.Id)
+
+        if fu is None:
+            return jsonify({'error': 'api user: not found', 'code': '0x01'}), 404
+
+        # validate password
+        passDecoded = base64.b64decode(fu.PasswordHash)
+        salt = passDecoded[:32]  # 32 is the length of the salt
+        key = passDecoded[32:]
+        passKey = hashlib.pbkdf2_hmac('sha256', data['password'].encode('utf-8'), salt, 1000000)
+
+        if key != passKey:
+            return jsonify({'error': 'invalid authentication', 'code': '0x01'}), 403
+
+        # load roles
+        anur = asp_net_user_role.get_asp_net_user_roles_by_uid(db, anu.Id)
+        if anur is None or len(anur) == 0:
+            return jsonify({'error': 'invalid role set', 'code': '0x01'}), 403
+
+        roles = []
+        for r in anur:
+            roles.append({'id': r.RoleId, 'name': r.Name})
 
         exp = datetime.now(timezone.utc) + timedelta(seconds=3600)
-        token_data = {'id': user['id'], 'exp': exp.isoformat()}
-        # token = encrypt(
-        #     json.dumps(token_data).encode('utf-8'),
-        #     auth_key.encode()
-        # )
-        # my_key = SymmetricKey.generate(protocol=ProtocolVersion4)
+        token_data = {'id': anu.Id, 'exp': exp.isoformat(), 'roles': roles}
         sk = SymmetricKey(key_material=auth_key.encode(), protocol=ProtocolVersion4)
         token = paseto.create(
             key=sk,
@@ -85,16 +91,16 @@ def test(app):
         #     return jsonify({'error': 'unable to connect to db'}), 500
 
         sql = """
-            SELECT 
-                Id, 
-                FirstName, 
-                LastName, 
-                Email 
-            FROM 
+            SELECT
+                Id,
+                FirstName,
+                LastName,
+                Email
+            FROM
                 dbo.AspNetUsers
             WHERE
                 Email = ?
-            ORDER BY Email 
+            ORDER BY Email
             OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY;
         """
 
