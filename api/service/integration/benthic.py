@@ -18,7 +18,6 @@ from api.model import \
     benthic_condition_category
 
 
-
 class BenthicIntegrationService:
     roles = []
 
@@ -27,11 +26,7 @@ class BenthicIntegrationService:
         app.route('/integration/benthic', methods=['POST'])(self.integration_benthic)
 
     def integration_benthic(self):
-        # todo: validate roles
         ur = request.environ['roles']
-        print("$$$$$$$$$$$$$$")
-        print(ur)
-        print("$$$$$$$$$$$$$$")
         if not role_validation.validate(self.roles, ur):
             return jsonify({'status': 403, 'error': 'permission denied'}), 403
 

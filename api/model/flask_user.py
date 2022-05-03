@@ -32,3 +32,14 @@ def get_flask_user_by(db, fields, by, value):
 
     return FlaskUser(**kwargs)
 
+
+def insert_flask_user(db, fu):
+    sql = '''
+            INSERT INTO dbo.FlaskUsers 
+                (Id, Email, PasswordHash)
+            VALUES
+                (?, ?, ?)
+        '''
+    db.cursor.execute(sql, fu.Id, fu.Email, fu.PasswordHash)
+    db.cursor.commit()
+    return db.cursor.rowcount

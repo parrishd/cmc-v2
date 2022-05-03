@@ -15,8 +15,6 @@ def create_app(test_config=None):
         DATABASE=os.path.join(app.instance_path, 'api.sqlite'),
     )
 
-    # print(os.environ)
-
     if test_config is None:
         # load the instance config, if it exists, when not testing
         app.config.from_pyfile('config.py', silent=True)
@@ -39,6 +37,7 @@ def create_app(test_config=None):
     dbs = DB(
         app,
         os.environ.get('VIMS_DB_HOST'),
+        os.environ.get('VIMS_DB_PORT'),
         os.environ.get('VIMS_DB_DATABASE'),
         os.environ.get('VIMS_DB_USER'),
         os.environ.get('VIMS_DB_PASSWORD')
@@ -50,17 +49,14 @@ def create_app(test_config=None):
     app.wsgi_app = AuthHeaderMiddleware(app.wsgi_app, auth_key)
 
     from .service import auth
-    auth.login(app)
+    auth.AuthService(app)
     auth.test(app)
 
     from .service.integration import benthic as benthic_integration
-    benthic_integration.BenthicIntegrationService(app, roles=['Admin', 'Coordinator'])
+    benthic_integration.BenthicIntegrationService(app, roles=['Admin', 'Integrator'])
 
     from .service.integration import waterquality as waterquality_integration
-    waterquality_integration.WaterQualityIntegrationService(app, roles=[])
-
-    # from .service.integration.waterquality import waterquality
-    # waterquality.service(app, [])  # todo: pass service roles
+    waterquality_integration.WaterQualityIntegrationService(app, roles=['Admin', 'Integrator'])
 
     # a simple page that says hello
     # @app.route('/hello')

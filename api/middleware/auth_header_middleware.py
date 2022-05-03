@@ -59,9 +59,8 @@ class AuthHeaderMiddleware:
             return res(environ, start_response)
 
         # validate required fields are in token
-        # token_data = json.loads(token)
         token_data = token['message']
-        if 'id' not in token_data or 'exp' not in token_data or 'roles' not in token_data:
+        if 'id' not in token_data or 'exp' not in token_data or 'role' not in token_data:
             res = Response(
                 json.dumps({'error': 'Auth token invalid'}),
                 mimetype='application/json',
@@ -70,7 +69,6 @@ class AuthHeaderMiddleware:
             return res(environ, start_response)
 
         # verify token has not expired
-        # exp = datetime.strptime(token_data['exp'], datetime.isoformat)
         exp = datetime.fromisoformat(token_data['exp'])
         if datetime.now(timezone.utc) > exp:
             res = Response(
@@ -82,13 +80,6 @@ class AuthHeaderMiddleware:
 
         # success call
         environ['user_id'] = token_data['id']
-        environ['roles'] = token_data['roles']
+        environ['roles'] = token_data['role']
         environ['auth_key'] = self.auth_key
         return self.app(environ, start_response)
-
-        # res = Response(
-        #     json.dumps({'error': 'DB connection failed'}),
-        #     mimetype='application/json',
-        #     status=500
-        # )
-        # return res(environ, start_response)

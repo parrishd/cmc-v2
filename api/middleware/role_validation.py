@@ -1,10 +1,9 @@
-def validate(roles, user_roles):
+def validate(roles, ur):
     if len(roles) == 0:
         return True
 
     for r in roles:
-        for ur in user_roles:
-            if r == ur['name']:
-                return True
+        if r == ur['name']:
+            return True
 
     return False

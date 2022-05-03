@@ -13,12 +13,14 @@ class DB:
     cursor = None
 
     server = ''
+    port = '1433'
     database = ''
     username = ''
     password = ''
 
-    def __init__(self, app, server, database, username, password):
+    def __init__(self, app, server, port, database, username, password):
         self.server = server
+        self.port = port
         self.database = database
         self.username = username
         self.password = password
@@ -26,7 +28,7 @@ class DB:
     def connect(self):
         try:
             conn = pyodbc.connect(
-                'DRIVER={ODBC Driver 17 for SQL Server};SERVER=' + self.server + ';DATABASE=' + self.database + ';UID=' + self.username + ';PWD=' + self.password)
+                'DRIVER={ODBC Driver 17 for SQL Server};SERVER=' + self.server + ',' + self.port + ';DATABASE=' + self.database + ';UID=' + self.username + ';PWD=' + self.password)
             print('@@@@@@@@@@@@@@@@@@@@@@@@@')
             print(f'connected to database: {self.server}')
             print('@@@@@@@@@@@@@@@@@@@@@@@@@')

@@ -4,6 +4,7 @@
 # Member
 # Monitor
 # Officer
+# Integrator
 
 
 class AspNetUserRole:
@@ -35,21 +36,35 @@ def get_asp_net_user_roles_by_uid(db, user_id):
         '''
 
     db.cursor.execute(sql, user_id)
-    q = db.cursor.fetchall()
+    q = db.cursor.fetchone()
     if q is None:
         return None
 
-    if len(q) == 0:
-        return None
+    idx = 0
+    kwargs = {}
+    for f in fields:
+        kwargs[f] = q[idx]
+        idx += 1
 
-    roles = []
-    for r in q:
-        idx = 0
-        kwargs = {}
-        for f in fields:
-            kwargs[f] = r[idx]
-            idx += 1
+    return AspNetUserRole(**kwargs)
 
-        roles.append(AspNetUserRole(**kwargs))
-
-    return roles
+    # code to handle multiple roles
+    # db.cursor.execute(sql, user_id)
+    # q = db.cursor.fetchall()
+    # if q is None:
+    #     return None
+    #
+    # if len(q) == 0:
+    #     return None
+    #
+    # roles = []
+    # for r in q:
+    #     idx = 0
+    #     kwargs = {}
+    #     for f in fields:
+    #         kwargs[f] = r[idx]
+    #         idx += 1
+    #
+    #     roles.append(AspNetUserRole(**kwargs))
+    #
+    # return roles
