@@ -1,4 +1,7 @@
 def validate(roles, ur):
+    print(roles)
+    print(ur)
+
     if len(roles) == 0:
         return True
 

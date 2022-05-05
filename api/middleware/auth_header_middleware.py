@@ -80,6 +80,6 @@ class AuthHeaderMiddleware:
 
         # success call
         environ['user_id'] = token_data['id']
-        environ['roles'] = token_data['role']
+        environ['role'] = token_data['role']
         environ['auth_key'] = self.auth_key
         return self.app(environ, start_response)

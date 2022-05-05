@@ -76,3 +76,17 @@ def get_benthic_event_by_group_station_datetime(db, fields, gid, sid, datetime):
         idx += 1
 
     return BenthicEvent(**kwargs)
+
+
+def delete_benthic_event_by_id(db, id):
+    sql = '''
+            DELETE   
+            FROM 
+                dbo.BenthicEvents
+            WHERE
+                Id = ?
+        '''
+
+    db.cursor.execute(sql, id)
+    db.cursor.commit()
+    return db.cursor.rowcount

@@ -77,3 +77,17 @@ def insert_event(db, event):
 
     db.cursor.execute('SELECT IDENT_CURRENT(\'dbo.Events\')')
     return db.cursor.fetchone()[0]
+
+
+def delete_event_by_id(db, id):
+    sql = '''
+            DELETE 
+            FROM 
+                dbo.Events
+            WHERE
+                Id = ?
+        '''
+
+    db.cursor.execute(sql, id)
+    db.cursor.commit()
+    return db.cursor.rowcount

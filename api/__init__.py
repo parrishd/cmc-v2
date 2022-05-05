@@ -53,10 +53,10 @@ def create_app(test_config=None):
     auth.test(app)
 
     from .service.integration import benthic as benthic_integration
-    benthic_integration.BenthicIntegrationService(app, roles=['Admin', 'Integrator'])
+    benthic_integration.BenthicIntegrationService(app)
 
     from .service.integration import waterquality as waterquality_integration
-    waterquality_integration.WaterQualityIntegrationService(app, roles=['Admin', 'Integrator'])
+    waterquality_integration.WaterQualityIntegrationService(app)
 
     # a simple page that says hello
     # @app.route('/hello')

@@ -1,6 +1,7 @@
 from datetime import datetime
 from flask import jsonify, request
 from api.util import number, datetimeutil
+from api.middleware import role_validation
 from api.model import \
     group, \
     event, \
@@ -19,20 +20,26 @@ from api.model import \
 class WaterQualityIntegrationService:
     roles = []
 
-    def __init__(self, app, roles):
-        self.roles = roles
-        app.route('/integration/water-quality', methods=['POST'])(self.integration_water_quality)
+    def __init__(self, app):
+        self.wq_roles = ['Admin', 'Officer', 'Member']
+        app.route('/integration/water-quality', methods=['POST', 'DELETE'])(self.integration_water_quality)
 
     def integration_water_quality(self):
-        # todo: validate roles
-
         if request.method == 'POST':
             return self.post(request.json)
+
+        if request.method == 'DELETE':
+            return self.delete(request.json)
 
         resp = {'status': 400, 'error': 'method not allowed'}
         return jsonify(resp), 200
 
     def post(self, data):
+        # validate roles
+        ur = request.environ['role']
+        if not role_validation.validate(self.wq_roles, ur):
+            return jsonify({'status': 403, 'error': 'permission denied'}), 403
+
         # fetch our authed user
         uid = request.environ['user_id']
         if uid is None or uid == '':
@@ -43,7 +50,7 @@ class WaterQualityIntegrationService:
         if db is None:
             return jsonify({'error': 'database connection failed'})
 
-        wqise, errors = self.validate(data, uid, db)
+        wqise, errors = self.validate(db, data, uid, ur)
 
         if len(errors) > 0:
             return jsonify({'error': 'data validation error(s)', 'errors': errors}), 500
@@ -56,8 +63,86 @@ class WaterQualityIntegrationService:
         resp = {'message': f'water quality event {eid} has been added', 'status': 200}
         return jsonify(resp), 200
 
+    def delete(self, data):
+        # validate roles
+        ur = request.environ['role']
+        if not role_validation.validate(self.wq_roles, ur):
+            return jsonify({'status': 403, 'error': 'permission denied'}), 403
+
+        # fetch our authed user
+        uid = request.environ['user_id']
+        if uid is None or uid == '':
+            return jsonify({'error': 'unable to determine user'}), 400
+
+        # fetch the db connection used to validate data
+        db = request.environ['db']
+        if db is None:
+            return jsonify({'error': 'database connection failed'})
+
+        # validate source (ie groupCode)
+        if 'source' not in data:
+            return jsonify({'error': 'invalid payload'})
+        else:
+            g = group.get_group_by(
+                db,
+                [
+                    'Id',
+                    'Name',
+                    'Code',
+                    'BenthicMethod',
+                    'CmcMember',
+                    'CmcMember2',
+                    'CmcMember3',
+                    'CmcMember4',
+                    'CmcMember5'
+                ],
+                'Code',
+                data['source']
+            )
+            if g is None:
+                return jsonify({'error': 'invalid source'})
+            else:
+                # validate the uid is a cmcMember IF user role is Member
+                if ur['name'] == 'Member':
+                    cmc = group.cmc_members_to_array(g)
+                    if uid not in cmc:
+                        return jsonify({'error': 'invalid group membership'})
+
+        # validate station
+        if 'station' not in data:
+            return jsonify({'error': 'invalid payload'})
+        else:
+            s = station.get_station_by(db, ['Id', 'Name', 'Code'], 'Code', data['station'])
+            if s is None:
+                return jsonify({'error': 'invalid station'})
+
+        # validate datetime
+        if 'datetime' not in data:
+            return jsonify({'error': 'invalid payload'})
+        else:
+            dateTime = datetimeutil.getdatetime(data['datetime'])
+
+            if dateTime is None:
+                return jsonify({'error': 'datetime format is invalid'})
+
+        wqe = event.get_event_by_group_station_datetime(
+            db,
+            ['Id'],
+            g.Id,
+            s.Id,
+            dateTime
+        )
+        if wqe is None:
+            return jsonify({'error': 'event does not exist'})
+
+        print(wqe.Id)
+        res = event.delete_event_by_id(db, wqe.Id)
+        print(res)
+
+        return jsonify({'status': 'success'})
+
     @staticmethod
-    def validate(data, uid, db):
+    def validate(db, data, uid, user_role):
         errors = []
         allowedDepths = [.3, .5, 1]
         wqise = WaterQualityIntegrationServiceEvent(uid)
@@ -66,10 +151,31 @@ class WaterQualityIntegrationService:
         if 'source' not in data:
             errors.append('invalid data set: source is required')
         else:
-            g = group.get_group_by(db, ['Id', 'Name', 'Code', 'BenthicMethod'], 'Code', data['source'])
+            g = group.get_group_by(
+                db,
+                [
+                    'Id',
+                    'Name',
+                    'Code',
+                    'BenthicMethod',
+                    'CmcMember',
+                    'CmcMember2',
+                    'CmcMember3',
+                    'CmcMember4',
+                    'CmcMember5'
+                ],
+                'Code',
+                data['source']
+            )
             if g is None:
                 errors.append('invalid data: source could not be found')
             else:
+                # validate the uid is a cmcMember IF user role is Member
+                if user_role['name'] == 'Member':
+                    cmc = group.cmc_members_to_array(g)
+                    if uid not in cmc:
+                        return None, ['invalid group membership']
+
                 wqise.group = g
 
         # validate station
