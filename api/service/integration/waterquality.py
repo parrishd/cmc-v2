@@ -139,7 +139,7 @@ class WaterQualityIntegrationService:
         res = event.delete_event_by_id(db, wqe.Id)
         print(res)
 
-        return jsonify({'status': 'success'})
+        return jsonify({'status': 200})
 
     @staticmethod
     def validate(db, data, uid, user_role):
