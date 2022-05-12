@@ -377,7 +377,6 @@ class BenthicIntegrationService:
         db.autocommit = False
 
         try:
-            print(vars(bise.event))
             eventId = benthic_event.insert_benthic_event(db, bise.event)
 
             # loop through tally samples and insert

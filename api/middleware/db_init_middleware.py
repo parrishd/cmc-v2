@@ -16,7 +16,7 @@ class DBInitMiddleware:
             return self.app(environ, start_response)
 
         res = Response(
-            json.dumps({'error': 'DB connection failed'}),
+            json.dumps({'error': 'database connection failed'}),
             mimetype='application/json',
             status=500
         )

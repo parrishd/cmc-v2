@@ -29,7 +29,7 @@ class AuthHeaderMiddleware:
         auth_header = request.headers.get('Authorization')
         if auth_header is None:
             res = Response(
-                json.dumps({'error': 'Auth token missing'}),
+                json.dumps({'error': 'auth token missing'}),
                 mimetype='application/json',
                 status=400
             )
@@ -45,14 +45,14 @@ class AuthHeaderMiddleware:
             print(token)
         except ValueError:
             res = Response(
-                json.dumps({'error': 'Auth token decode failed'}),
+                json.dumps({'error': 'auth token decode failed'}),
                 mimetype='application/json',
                 status=400
             )
             return res(environ, start_response)
         except PasetoException:
             res = Response(
-                json.dumps({'error': 'Auth token exception'}),
+                json.dumps({'error': 'auth token exception'}),
                 mimetype='application/json',
                 status=400
             )
@@ -62,7 +62,7 @@ class AuthHeaderMiddleware:
         token_data = token['message']
         if 'id' not in token_data or 'exp' not in token_data or 'role' not in token_data:
             res = Response(
-                json.dumps({'error': 'Auth token invalid'}),
+                json.dumps({'error': 'auth token invalid'}),
                 mimetype='application/json',
                 status=400
             )
@@ -72,7 +72,7 @@ class AuthHeaderMiddleware:
         exp = datetime.fromisoformat(token_data['exp'])
         if datetime.now(timezone.utc) > exp:
             res = Response(
-                json.dumps({'error': 'Auth token expired'}),
+                json.dumps({'error': 'auth token expired'}),
                 mimetype='application/json',
                 status=400
             )
