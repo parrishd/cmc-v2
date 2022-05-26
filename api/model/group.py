@@ -63,14 +63,81 @@ def get_group_by(db, fields, by, value):
 
     db.cursor.execute(sql, value)
     q = db.cursor.fetchone()
+    cols = db.cursor.description
     if q is None:
         return None
 
-    idx = 0
     kwargs = {}
-    for f in fields:
-        kwargs[f] = q[idx]
-        idx += 1
+    for (index, col) in enumerate(q):
+        kwargs[cols[index][0]] = col
+
+    print(kwargs)
 
     return Group(**kwargs)
 
+
+# get all groups paginated
+def get_groups(db, col, direction, offset, limit, search):
+    # base SELECT
+    sql = '''
+            SELECT 
+                *
+            FROM 
+                dbo.Groups
+        '''
+
+    # WHERE clause for searching
+    if search != '':
+        like = '''
+            WHERE
+                Name Like '%{0}%'
+        '''.format(search)
+        sql = f'{sql} {like}'
+
+    # ORDER BY
+    sql = f'{sql} ORDER BY {col} {direction}'
+
+    # OFFSET and LIMIT
+    if offset >= 0 and limit > 0:
+        sql = f'{sql} OFFSET {offset} ROWS FETCH NEXT {limit} ROWS ONLY'
+
+    print(sql)
+
+    db.cursor.execute(sql)
+    rows = db.cursor.fetchall()
+    cols = db.cursor.description
+
+    groups = []
+    for r in rows:
+        kwargs = {}
+        for (index, col) in enumerate(r):
+            kwargs[cols[index][0]] = col
+
+        groups.append(Group(**kwargs))
+
+    return groups
+
+
+# group count
+def count(db, search):
+    sql = '''
+            SELECT 
+                COUNT(Id)
+            FROM 
+                dbo.Groups
+        '''
+
+    if search != '':
+        like = '''
+            WHERE
+                Name Like '%{0}%'
+        '''.format(search)
+        sql = f'{sql} {like}'
+
+    db.cursor.execute(sql)
+    q = db.cursor.fetchone()
+
+    if q is None:
+        return None
+
+    return q[0]
