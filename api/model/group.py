@@ -71,8 +71,6 @@ def get_group_by(db, fields, by, value):
     for (index, col) in enumerate(q):
         kwargs[cols[index][0]] = col
 
-    print(kwargs)
-
     return Group(**kwargs)
 
 
@@ -141,3 +139,32 @@ def count(db, search):
         return None
 
     return q[0]
+
+
+def insert(db, group):
+    sql = '''
+            INSERT INTO dbo.Groups (
+                {0}
+            ) VALUES(
+                {1}       
+            )
+        '''.format(','.join(group.keys()), ','.join(['?' for _ in group.values()]))
+
+    print(sql)
+
+    db.cursor.execute(sql, *group.values())
+
+    db.cursor.execute('SELECT IDENT_CURRENT(\'dbo.Groups\')')
+    id = db.cursor.fetchone()[0]
+    db.cursor.commit()
+
+    return id
+
+
+def delete(db, gid):
+    sql = '''
+            DELETE FROM dbo.Groups WHERE Id = ?
+        '''
+    db.cursor.execute(sql, gid)
+    db.cursor.commit()
+    return gid
