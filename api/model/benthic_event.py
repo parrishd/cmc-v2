@@ -78,6 +78,29 @@ def get_benthic_event_by_group_station_datetime(db, fields, gid, sid, datetime):
     return BenthicEvent(**kwargs)
 
 
+def get_benthic_event_by_eid(db, fields, by, value):
+    sql = '''
+              SELECT 
+                  {0}
+              FROM 
+                  dbo.BenthicEvents
+              WHERE
+                  {1} = ?;
+          '''.format(', '.join(fields), by)
+
+    db.cursor.execute(sql, value)
+    q = db.cursor.fetchone()
+    cols = db.cursor.description
+    if q is None:
+        return None
+
+    kwargs = {}
+    for (index, col) in enumerate(q):
+        kwargs[cols[index][0]] = col
+
+    return BenthicEvent(**kwargs)
+
+
 def delete_benthic_event_by_id(db, id):
     sql = '''
             DELETE   
