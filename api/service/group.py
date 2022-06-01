@@ -44,7 +44,7 @@ class GroupService:
     def __init__(self, app):
         self.group_service_get_roles = ['Admin', 'Officer', 'Member']
         self.group_service_delete_roles = ['Admin', 'Officer', 'Member']
-        app.route('/group/<gid>', methods=['GET', 'DELETE'])(self.group_service)
+        app.route('/group/<gid>', methods=['GET', 'DELETE', 'PUT'])(self.group_service)
 
         self.group_service_post_roles = ['Admin', 'Officer', 'Member']
         app.route('/group', methods=['POST'])(self.group_post_service)
@@ -57,6 +57,11 @@ class GroupService:
         if db is None:
             return jsonify({'error': 'database connection failed'})
 
+        # fetch our authed user
+        uid = request.environ['user_id']
+        if uid is None or uid == '':
+            return jsonify({'error': 'unable to determine user'}), 400
+
         ur = request.environ['role']
 
         if not validation.isint(gid):
@@ -68,10 +73,13 @@ class GroupService:
         if request.method == 'DELETE':
             return self.delete(db, gid, ur)
 
+        if request.method == 'PUT':
+            return self.put(db, gid, uid, ur)
+
         resp = {'status': 400, 'error': 'method not allowed'}
         return jsonify(resp), 400
 
-    # get group
+    # GET group
     def get(self, db, gid, user_roles):
         # validate roles
         if not role_validation.validate(self.group_list_service_roles, user_roles):
@@ -83,7 +91,7 @@ class GroupService:
 
         return jsonify(g.__dict__), 200
 
-    # delete group
+    # DELETE group
     def delete(self, db, gid, user_roles):
         # validate roles
         if not role_validation.validate(self.group_list_service_roles, user_roles):
@@ -94,6 +102,39 @@ class GroupService:
             return jsonify({'status': 200, 'id': g}), 200
         except Exception as err:
             return jsonify({'status': 500, 'error': str(err)}), 403
+
+    # PUT group
+    def put(self, db, gid, user_id, user_roles):
+        # validate roles
+        if not role_validation.validate(self.group_list_service_roles, user_roles):
+            return jsonify({'status': 403, 'error': 'permission denied'}), 403
+
+        # parse out any invalid fields
+        json = request.json
+        data = {}
+        for k in json.keys():
+            if k in self.fields:
+                data[k] = json[k]
+
+        # validate fields
+        g, err = self.validate(data, post=False)
+        if len(err) > 0:
+            return jsonify({'status': 400, 'errors': err}), 400
+
+        # set user id
+        g['ModifiedBy'] = user_id
+
+        # set dates
+        date = datetime.strftime(datetime.now(), '%Y-%m-%dT%H:%M:%S')
+        g['ModifiedDate'] = date
+
+        # insert data
+        try:
+            _ = group.update(db, gid, g)
+        except Exception as err:
+            return jsonify({'status': 500, 'error': str(err)}), 403
+
+        return self.get(db, gid, user_roles)  # jsonify(g), 200
 
     # post services POST/PATCH
     def group_post_service(self):
@@ -128,7 +169,7 @@ class GroupService:
                 data[k] = json[k]
 
         # validate fields
-        g, err = self.validate(data)
+        g, err = self.validate(data, post=True)
         if len(err) > 0:
             return jsonify({'status': 400, 'errors': err}), 400
 
@@ -145,11 +186,10 @@ class GroupService:
         # insert data
         try:
             id = group.insert(db, g)
-            g['Id'] = id
         except Exception as err:
             return jsonify({'status': 500, 'error': str(err)}), 403
 
-        return jsonify(g), 200
+        return self.get(db, id, user_roles)  # jsonify(g), 200
 
     # list service handlers
     def group_list_service(self):
@@ -204,17 +244,18 @@ class GroupService:
         return jsonify(resp), 200
 
     @staticmethod
-    def validate(data):
+    def validate(data, post=False):
         errors = []
+
+        if post:
+            if 'Code' not in data:
+                errors.append('Code is required')
+
+            if 'Name' not in data:
+                errors.append('Name is required')
 
         if 'Id' in data:
             errors.append('Id should not be include')
-
-        if 'Code' not in data:
-            errors.append('Code is required')
-
-        if 'Name' not in data:
-            errors.append('Name is required')
 
         if 'Status' in data and data['Status'] is not None:
             if not validation.isBool(data['Status']):

@@ -150,8 +150,6 @@ def insert(db, group):
             )
         '''.format(','.join(group.keys()), ','.join(['?' for _ in group.values()]))
 
-    print(sql)
-
     db.cursor.execute(sql, *group.values())
 
     db.cursor.execute('SELECT IDENT_CURRENT(\'dbo.Groups\')')
@@ -159,6 +157,22 @@ def insert(db, group):
     db.cursor.commit()
 
     return id
+
+
+def update(db, gid, group):
+    sql = '''
+            UPDATE dbo.Groups SET
+                {0} = ?
+            WHERE
+                Id = ?
+        '''.format(' = ?, '.join(group.keys()))
+
+    print(sql)
+
+    db.cursor.execute(sql, *group.values(), gid)
+    db.cursor.commit()
+
+    return gid
 
 
 def delete(db, gid):
