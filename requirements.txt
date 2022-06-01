@@ -9,6 +9,7 @@ pycryptodomex==3.14.1
 pyodbc==4.0.32
 pysodium==0.7.11
 python-dateutil==2.8.2
+python-paseto==0.5.2
 pytzdata==2020.1
 six==1.16.0
 Werkzeug==2.0.3

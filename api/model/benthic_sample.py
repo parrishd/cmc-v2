@@ -54,6 +54,7 @@ def insert_benthic_sample(db, bs):
 
     return True
 
+
 # gets a set of fields of a single station by a single where
 def get_benthic_sample_by(db, fields, by, value):
     sql = '''
@@ -78,3 +79,31 @@ def get_benthic_sample_by(db, fields, by, value):
 
     return BenthicSample(**kwargs)
 
+
+# gets all fields of a single event by event id
+def get_benthic_sample_by_event_id(db, eid):
+    sql = '''
+            SELECT 
+                *
+            FROM 
+                dbo.BenthicSamples
+            JOIN 
+                dbo.BenthicParameters
+            ON 
+                dbo.BenthicSamples.benthicParameterId = dbo.BenthicParameters.Id
+            WHERE
+                BenthicEventId = ?
+        '''
+
+    db.cursor.execute(sql, eid)
+    rows = db.cursor.fetchall()
+    cols = db.cursor.description
+    tallies = []
+    for r in rows:
+        kwargs = {}
+        for (index, col) in enumerate(r):
+            kwargs[cols[index][0]] = col
+
+        tallies.append(BenthicSample(**kwargs))
+
+    return tallies

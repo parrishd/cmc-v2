@@ -23,9 +23,12 @@ class BenthicIntegrationService:
 
     def __init__(self, app):
         self.benthic_roles = ['Admin', 'Officer', 'Member']
-        app.route('/integration/benthic', methods=['POST', 'DELETE'])(self.integration_benthic)
+        app.route('/integration/benthic', methods=['POST', 'GET', 'DELETE'])(self.integration_benthic)
 
     def integration_benthic(self):
+        if request.method == 'GET':
+            return self.get()
+
         if request.method == 'POST':
             return self.post(request.json)
 
@@ -34,6 +37,94 @@ class BenthicIntegrationService:
 
         resp = {'status': 400, 'error': 'method not allowed'}
         return jsonify(resp), 400
+
+    def get(self):
+        # get event data by "id" or "source", "station", "datetime" query params
+
+        # first validate user roles
+        ur = request.environ['role']
+        if not role_validation.validate(self.benthic_roles, ur):
+            return jsonify({'status': 403, 'error': 'permission denied'}), 403
+
+        # fetch our authed user
+        uid = request.environ['user_id']
+        if uid is None or uid == '':
+            return jsonify({'error': 'unable to determine user'}), 400
+
+        # fetch the db connection used to validate data
+        db = request.environ['db']
+        if db is None:
+            return jsonify({'error': 'database connection failed'})
+
+        # grab the event id from request query param
+        eid = request.args.get('id')
+
+        # request came with source, station and datetime args instead of event Id
+        if eid is None:
+            src = request.args.get('source')
+            st = request.args.get('station')
+            dt = request.args.get('datetime')
+            if (src is None) | (st is None) | (dt is None):
+                return jsonify({'error': 'insufficient parameter data provided'})
+
+            # retrieve group data
+            g = group.get_group_by(db, ['Id', 'Name', 'Code'], 'Code', src)
+            if g is None:
+                return jsonify({'error': 'invalid source'})
+
+            # retrieve station data
+            s = station.get_station_by(db, ['Id', 'Name', 'Code'], 'Code', st)
+            if s is None:
+                return jsonify({'error': 'invalid station'})
+
+            # validate datetime format
+            dateTime = datetimeutil.getdatetime(dt)
+            if dateTime is None:
+                return jsonify({'error': 'datetime format is invalid'})
+
+            # retrieve benthic event if exists
+            be = benthic_event.get_benthic_event_by_group_station_datetime(
+                db,
+                ['Id', 'Comments', 'DateTime'],
+                g.Id,
+                s.Id,
+                dateTime
+            )
+            if be is None:
+                return jsonify({'error': 'event record not found'}), 404
+            else:
+                eid = be.Id
+
+        else:
+            # retrieve benthic event by event Id if event exists
+            be = benthic_event.get_benthic_event_by_eid(db, ['*'], 'Id', eid)
+            if be is None:
+                return jsonify({'error': 'event record not found'}), 404
+
+            # retrieve group data
+            g = group.get_group_by(db, ['*'], 'Id', be.GroupId)
+            # retrieve station data
+            s = station.get_station_by(db, ['Id', 'Name', 'Code'], 'Id', be.StationId)
+
+        # retrieve tallies aka samples
+        bs = benthic_sample.get_benthic_sample_by_event_id(db, eid)
+
+        # retrieve benthic condition
+        bec = benthic_event_condition.get_benthic_event_condition(db, eid)
+
+        # retrieve benthic monitor logs
+        bm = benthic_monitor_log.get_benthic_monitor_log(db, eid)
+
+        resp = {
+            'source': g.Code,
+            'station': s.Code,
+            'comments': be.Comments,
+            'datetime': be.DateTime,
+            'tallies': [t.__dict__ for t in bs],
+            'conditions': [c.__dict__ for c in bec],
+            'monitors': [m.__dict__ for m in bm]
+        }
+        return jsonify(resp), 200
 
     def post(self, data):
         # validate roles
@@ -170,6 +261,7 @@ class BenthicIntegrationService:
                 'Code',
                 data['source']
             )
+            print('here we got group: ', db, data, uid, user_role)
             if g is None:
                 errors.append('invalid data: source could not be found')
             else:
@@ -378,6 +470,8 @@ class BenthicIntegrationService:
 
         try:
             eventId = benthic_event.insert_benthic_event(db, bise.event)
+            # print(f'eventId: {vars(eventId)}')
+            # print(f'bise.event: {vars(bise.event)}')
 
             # loop through tally samples and insert
             for t in bise.tallies:

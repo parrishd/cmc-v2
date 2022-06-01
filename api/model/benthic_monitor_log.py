@@ -45,3 +45,33 @@ def insert_benthic_monitor_log(db, ml):
         ml.ModifiedDate)
 
     return True
+
+
+# gets a set of fields of a single station by a single where
+def get_benthic_monitor_log(db, eid):
+    sql = '''
+            SELECT 
+                *
+            FROM 
+                dbo.BenthicMonitorLogs
+            JOIN 
+                dbo.AspNetUsers   
+            ON
+                dbo.BenthicMonitorLogs.UserId = dbo.AspNetUsers.Id
+            WHERE
+                BenthicEventId = ?;
+        '''
+
+    db.cursor.execute(sql, eid)
+    rows = db.cursor.fetchall()
+    cols = db.cursor.description
+    monitors = []
+    for r in rows:
+        # print('row tho: ', {r})
+        kwargs = {}
+        for (index, col) in enumerate(r):
+            kwargs[cols[index][0]] = col
+
+        monitors.append(BenthicMonitorLog(**kwargs))
+
+    return monitors
