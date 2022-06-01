@@ -1,4 +1,9 @@
 import re
+from uuid import UUID
+
+
+def isBool(item):
+    return type(item) == bool
 
 
 def isfloat(item):
@@ -42,3 +47,11 @@ def isint(item):
             return True
         else:
             return False
+
+
+def isUUID(item):
+    try:
+        _ = UUID(item, version=4)
+        return True
+    except ValueError:
+        return False

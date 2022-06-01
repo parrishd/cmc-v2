@@ -1,6 +1,6 @@
 from datetime import datetime
 from flask import jsonify, request
-from api.util import number, datetimeutil
+from api.util import validation, datetimeutil
 from api.middleware import role_validation
 from api.model import \
     group, \
@@ -260,14 +260,14 @@ class WaterQualityIntegrationService:
                 wqSample = WaterQualityIntegrationServiceQualitySample(q['name'], q['value'], q['id'])
 
                 # check if value is a number
-                if not number.isfloat(q['value']):
+                if not validation.isfloat(q['value']):
                     errors.append(f'quality {idx}: value is not a number for parameter_type quality')
                 else:
                     wqSample.value = float(q['value'])
 
                 # check if depth is a number
                 if 'depth' in q:
-                    if not number.isfloat(q['depth']):
+                    if not validation.isfloat(q['depth']):
                         errors.append(f'quality {idx}: depth is not a number for parameter_type quality')
                     else:
                         wqSample.depth = float(q['depth'])
@@ -276,7 +276,7 @@ class WaterQualityIntegrationService:
                     wqSample.publish = q['publish'] is True
 
                 # check if value is a number
-                if not number.isint(q['id']):
+                if not validation.isint(q['id']):
                     errors.append(f'quality {idx}: id is not an int for parameter_type quality')
                 else:
                     sid = int(q['id'])
@@ -365,7 +365,7 @@ class WaterQualityIntegrationService:
                     monitorSample.paramId = anu.Id
 
                 # check if value is a number
-                if not number.isfloat(m['value']):
+                if not validation.isfloat(m['value']):
                     errors.append(f'monitor {idx}: value is not a number for parameter_type monitor')
 
                 # check for duplicate

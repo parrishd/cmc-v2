@@ -3,7 +3,7 @@ import pyodbc
 
 from datetime import datetime
 from flask import jsonify, request
-from api.util import number, datetimeutil
+from api.util import validation, datetimeutil
 from api.middleware import role_validation
 from api.model import \
     group, \
@@ -262,7 +262,7 @@ class BenthicIntegrationService:
                 tallySample = BenthicIntegrationServiceSample(t['name'], t['value'])
 
                 # check if value is a number
-                if not number.isfloat(t['value']):
+                if not validation.isfloat(t['value']):
                     errors.append(f'tally {idx}: value is not a number for parameter_type tally')
 
                 # check if valid parameter name
@@ -350,7 +350,7 @@ class BenthicIntegrationService:
                     monitorSample.paramId = anu.Id
 
                 # check if value is a number
-                if not number.isfloat(m['value']):
+                if not validation.isfloat(m['value']):
                     errors.append(f'monitor {idx}: value is not a number for parameter_type monitor')
 
                 if monitorSample.paramId is not None:

@@ -2,7 +2,7 @@ import json
 
 from datetime import datetime
 from flask import jsonify, request
-from api.util import number
+from api.util import validation
 from api.model import \
     group, \
     station, \
@@ -186,7 +186,7 @@ class BenthicImportService:
                 biss.paramType = 'tally'
 
                 # check if value is a number
-                if not number.isfloat(d['value']):
+                if not validation.isfloat(d['value']):
                     errors.append(f'record: {i} value is not a number for parameter_type tally')
 
                 # check if valid parameter name
@@ -219,7 +219,7 @@ class BenthicImportService:
                     biss.user = anu
 
                 # check if value is a number
-                if not number.isfloat(d['value']):
+                if not validation.isfloat(d['value']):
                     errors.append(f'record: {i} value is not a number for parameter_type tally')
 
                 # check if an event has already been added

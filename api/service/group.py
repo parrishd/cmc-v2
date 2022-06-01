@@ -1,7 +1,8 @@
 from flask import jsonify, request
 from datetime import datetime
+from uuid import UUID
 
-from api.util import number
+from api.util import validation
 from api.model import group
 from api.middleware import role_validation
 
@@ -58,7 +59,7 @@ class GroupService:
 
         ur = request.environ['role']
 
-        if not number.isint(gid):
+        if not validation.isint(gid):
             return jsonify({'error': 'invalid group id'})
 
         if request.method == 'GET':
@@ -126,22 +127,20 @@ class GroupService:
             if k in self.fields:
                 data[k] = json[k]
 
+        # validate fields
+        g, err = self.validate(data)
+        if len(err) > 0:
+            return jsonify({'status': 400, 'errors': err}), 400
+
         # set user id
-        data['CreatedBy'] = user_id
-        data['ModifiedBy'] = user_id
+        g['CreatedBy'] = user_id
+        g['ModifiedBy'] = user_id
 
         # set dates
         date = datetime.strftime(datetime.now(), '%Y-%m-%dT%H:%M:%S')
-        data['CreatedDate'] = date
-        data['DataUseDate'] = date
-        data['ModifiedDate'] = date
-
-        print(data)
-
-        # validate fields
-        g, err = self.validate(data, user_id)
-        if len(err) > 0:
-            return jsonify({'status': 400, 'errors': err}), 400
+        g['CreatedDate'] = date
+        g['DataUseDate'] = date
+        g['ModifiedDate'] = date
 
         # insert data
         try:
@@ -205,9 +204,48 @@ class GroupService:
         return jsonify(resp), 200
 
     @staticmethod
-    def validate(data, uid):
+    def validate(data):
         errors = []
 
-        # todo: validation
+        if 'Id' in data:
+            errors.append('Id should not be include')
+
+        if 'Code' not in data:
+            errors.append('Code is required')
+
+        if 'Name' not in data:
+            errors.append('Name is required')
+
+        if 'Status' in data and data['Status'] is not None:
+            if not validation.isBool(data['Status']):
+                errors.append('Status must be of type boolean')
+
+        if 'cmcQapp' in data and data['cmcQapp'] is not None:
+            if not validation.isBool(data['cmcQapp']):
+                errors.append('cmcQapp must be of type boolean')
+
+        if 'coordinatorCanPublish' in data and data['coordinatorCanPublish'] is not None:
+            if not validation.isBool(data['coordinatorCanPublish']):
+                errors.append('coordinatorCanPublish must be of type boolean')
+
+        if 'CmcMember' in data and data['CmcMember'] is not None:
+            if not validation.isUUID(data['CmcMember']):
+                errors.append('CmcMember must be a valid UUID')
+
+        if 'CmcMember2' in data and data['CmcMember2'] is not None:
+            if not validation.isUUID(data['CmcMember2']):
+                errors.append('CmcMember2 must be a valid UUID')
+
+        if 'CmcMember3' in data and data['CmcMember3'] is not None:
+            if not validation.isUUID(data['CmcMember3']):
+                errors.append('CmcMember3 must be a valid UUID')
+
+        if 'CmcMember4' in data and data['CmcMember4'] is not None:
+            if not validation.isUUID(data['CmcMember4']):
+                errors.append('CmcMember4 must be a valid UUID')
+
+        if 'CmcMember5' in data and data['CmcMember5'] is not None:
+            if not validation.isUUID(data['CmcMember5']):
+                errors.append('CmcMember5 must be a valid UUID')
 
         return data, errors
