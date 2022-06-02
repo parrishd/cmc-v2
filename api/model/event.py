@@ -79,6 +79,29 @@ def insert_event(db, event):
     return db.cursor.fetchone()[0]
 
 
+def get_event_by_id(db, fields, by, value):
+    sql = '''
+              SELECT 
+                  {0}
+              FROM 
+                  dbo.Events
+              WHERE
+                  {1} = ?;
+          '''.format(', '.join(fields), by)
+
+    db.cursor.execute(sql, value)
+    q = db.cursor.fetchone()
+    cols = db.cursor.description
+    if q is None:
+        return None
+
+    kwargs = {}
+    for (index, col) in enumerate(q):
+        kwargs[cols[index][0]] = col
+
+    return Event(**kwargs)
+
+
 def delete_event_by_id(db, id):
     sql = '''
             DELETE 
