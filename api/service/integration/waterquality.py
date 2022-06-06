@@ -22,9 +22,12 @@ class WaterQualityIntegrationService:
 
     def __init__(self, app):
         self.wq_roles = ['Admin', 'Officer', 'Member']
-        app.route('/integration/water-quality', methods=['POST', 'DELETE'])(self.integration_water_quality)
+        app.route('/integration/water-quality', methods=['GET', 'POST', 'DELETE'])(self.integration_water_quality)
 
     def integration_water_quality(self):
+        if request.method == 'GET':
+            return self.get()
+
         if request.method == 'POST':
             return self.post(request.json)
 
@@ -32,6 +35,91 @@ class WaterQualityIntegrationService:
             return self.delete(request.json)
 
         resp = {'status': 400, 'error': 'method not allowed'}
+        return jsonify(resp), 200
+
+    def get(self):
+        # validate roles
+        ur = request.environ['role']
+        if not role_validation.validate(self.wq_roles, ur):
+            return jsonify({'status': 403, 'error': 'permission denied'}), 403
+
+        # fetch our authed user
+        uid = request.environ['user_id']
+        if uid is None or uid == '':
+            return jsonify({'error': 'unable to determine user'}), 400
+
+        # fetch the db connection used to validate data
+        db = request.environ['db']
+        if db is None:
+            return jsonify({'error': 'database connection failed'})
+
+        # grab the event id from request query param
+        eid = request.args.get('id')
+
+        # request came with source, station and datetime args instead of event Id
+        if eid is None:
+            src = request.args.get('source')
+            st = request.args.get('station')
+            dt = request.args.get('datetime')
+            if (src is None) | (st is None) | (dt is None):
+                return jsonify({'error': 'insufficient parameter data provided'})
+
+            # retrieve group data
+            g = group.get_group_by(db, ['Id', 'Name', 'Code'], 'Code', src)
+            if g is None:
+                return jsonify({'error': 'invalid source'})
+
+            # retrieve station data
+            s = station.get_station_by(db, ['Id', 'Name', 'Code'], 'Code', st)
+            if s is None:
+                return jsonify({'error': 'invalid station'})
+
+            # validate datetime format
+            dateTime = datetimeutil.getdatetime(dt)
+            if dateTime is None:
+                return jsonify({'error': 'datetime format is invalid'})
+
+            # retrieve water-quality event if exists
+            wqe = event.get_event_by_group_station_datetime(
+                db,
+                ['Id', 'Comments', 'DateTime'],
+                g.Id,
+                s.Id,
+                dateTime
+            )
+            if wqe is None:
+                return jsonify({'error': 'water quality event record not found'}), 404
+            else:
+                eid = wqe.Id
+        else:
+            # retrieve water-quality event by event Id if event exists
+            wqe = event.get_event_by_id(db, ['*'], 'Id', eid)
+            if wqe is None:
+                return jsonify({'error': 'water quality event record not found'}), 404
+
+            # retrieve group
+            g = group.get_group_by(db, ['Id', 'Name', 'Code'], 'Id', wqe.GroupId)
+            # retrieve station
+            s = station.get_station_by(db, ['Id', 'Name', 'Code'], 'Id', wqe.StationId)
+
+        # retrieve qualities
+        qs = sample.get_sample_by_event_id(db, eid)
+
+        # retrieve event conditions
+        ec = event_condition.get_event_condition_by_event_id(db, eid)
+
+        # retrieve monitor logs
+        monitors = monitor_log.get__monitor_log_by_event_id(db, eid)
+
+        resp = {
+            'source': g.Code,
+            'station': s.Code,
+            'comments': wqe.Comments,
+            'datetime': wqe.DateTime,
+            'qualities': [q.__dict__ for q in qs],
+            'conditions': [c.__dict__ for c in ec],
+            'monitors': [m.__dict__ for m in monitors]
+        }
         return jsonify(resp), 200
 
     def post(self, data):

@@ -43,6 +43,34 @@ def get_sample_by(db, fields, by, value):
     return Sample(**kwargs)
 
 
+def get_sample_by_event_id(db, eid):
+    sql = '''
+            SELECT 
+                *
+            FROM 
+                dbo.Samples
+            JOIN 
+                dbo.Parameters
+            ON 
+                dbo.Samples.ParameterId = dbo.Parameters.Id
+            WHERE
+                EventId = ?
+        '''
+
+    db.cursor.execute(sql, eid)
+    rows = db.cursor.fetchall()
+    cols = db.cursor.description
+    qualities = []
+    for r in rows:
+        kwargs = {}
+        for (index, col) in enumerate(r):
+            kwargs[cols[index][0]] = col
+
+        qualities.append(Sample(**kwargs))
+
+    return qualities
+
+
 def insert_sample(db, wqs):
     sql = '''
             INSERT INTO dbo.Samples (
