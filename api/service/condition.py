@@ -144,12 +144,7 @@ class ConditionService:
             return jsonify({'status': 400, 'errors': err}), 400
 
         if 'Order' in data.keys():
-            rk = data.pop('Order', None)
-            print(rk)
-            if rk is not None:
-                data['[Order]'] = rk
-
-        print(data)
+            data['[Order]'] = data.pop('Order', None)
 
         # insert data
         try:
