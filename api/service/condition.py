@@ -62,20 +62,7 @@ class ConditionService:
         if not role_validation.validate(self.condition_list_service_roles, user_roles):
             return jsonify({'status': 403, 'error': 'permission denied'}), 403
 
-        c = condition.get_condition_by(
-            db,
-            [
-                'Id',
-                '[Code]',
-                'Name',
-                'Description',
-                'Status',
-                '[Order]',
-                'isCategorical',
-            ],
-            'Id',
-            cid
-        )
+        c = condition.get_condition_by(db, ['*'], 'Id', cid)
         if c is None:
             return jsonify({'status': 404, 'error': 'record not found'}), 404
 
@@ -156,6 +143,14 @@ class ConditionService:
         if len(err) > 0:
             return jsonify({'status': 400, 'errors': err}), 400
 
+        if 'Order' in data.keys():
+            rk = data.pop('Order', None)
+            print(rk)
+            if rk is not None:
+                data['[Order]'] = rk
+
+        print(data)
+
         # insert data
         try:
             id = condition.insert(db, c)
@@ -222,13 +217,10 @@ class ConditionService:
         # todo: check validation
         if post:
             if 'Code' not in data:
-                errors.append('Code is required 1')
+                errors.append('Code is required')
 
             if 'Name' not in data:
                 errors.append('Name is required')
-
-            # if 'Order' not in data:
-            #     errors.append('Order is required')
 
             if 'Status' not in data:
                 errors.append('Status is required')
@@ -238,6 +230,10 @@ class ConditionService:
 
         if 'Id' in data:
             errors.append('Id should not be include')
+
+        if 'Order' in data:
+            if not validation.isint(data['Order']):
+                errors.append('Order must be of type Int')
 
         if 'Status' in data and data['Status'] is not None:
             if not validation.isBool(data['Status']):

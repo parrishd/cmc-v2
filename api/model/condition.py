@@ -23,16 +23,17 @@ def get_condition_by(db, fields, by, value):
                 {1} = ?;
         '''.format(', '.join(fields), by)
 
+    print(sql)
+
     db.cursor.execute(sql, value)
     q = db.cursor.fetchone()
+    cols = db.cursor.description
     if q is None:
         return None
 
-    idx = 0
     kwargs = {}
-    for f in fields:
-        kwargs[f] = q[idx]
-        idx += 1
+    for (index, col) in enumerate(q):
+        kwargs[cols[index][0]] = col
 
     return Condition(**kwargs)
 
@@ -112,6 +113,8 @@ def insert(db, condition):
                 {1}       
             )
         '''.format(','.join(condition.keys()), ','.join(['?' for _ in condition.values()]))
+
+    print(sql)
 
     db.cursor.execute(sql, *condition.values())
 
