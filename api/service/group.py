@@ -1,6 +1,5 @@
 from flask import jsonify, request
 from datetime import datetime
-from uuid import UUID
 
 from api.util import validation
 from api.model import group
