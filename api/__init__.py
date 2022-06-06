@@ -58,6 +58,9 @@ def create_app(test_config=None):
     from .service import condition
     condition.ConditionService(app)
 
+    from .service import station
+    station.StationService(app)
+
     from .service.integration import benthic as benthic_integration
     benthic_integration.BenthicIntegrationService(app)
 

@@ -63,8 +63,6 @@ def get_conditions(db, col, direction, offset, limit, search):
     if offset >= 0 and limit > 0:
         sql = f'{sql} OFFSET {offset} ROWS FETCH NEXT {limit} ROWS ONLY'
 
-    print(sql)
-
     db.cursor.execute(sql)
     rows = db.cursor.fetchall()
     cols = db.cursor.description
@@ -114,8 +112,6 @@ def insert(db, condition):
             )
         '''.format(','.join(condition.keys()), ','.join(['?' for _ in condition.values()]))
 
-    print(sql)
-
     db.cursor.execute(sql, *condition.values())
 
     db.cursor.execute('SELECT IDENT_CURRENT(\'dbo.Conditions\')')
@@ -132,8 +128,6 @@ def update(db, cid, group):
             WHERE
                 Id = ?
         '''.format(' = ?, '.join(group.keys()))
-
-    print(sql)
 
     db.cursor.execute(sql, *group.values(), cid)
     db.cursor.commit()

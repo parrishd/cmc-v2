@@ -53,3 +53,69 @@ def get_station_by(db, fields, by, value):
 
     return Station(**kwargs)
 
+
+# get all groups paginated
+def get_stations(db, col, direction, offset, limit, search):
+    # base SELECT
+    sql = '''
+            SELECT 
+                *
+            FROM 
+                dbo.Stations
+        '''
+
+    # WHERE clause for searching
+    if search != '':
+        like = '''
+            WHERE
+                Name Like '%{0}%'
+        '''.format(search)
+        sql = f'{sql} {like}'
+
+    # ORDER BY
+    sql = f'{sql} ORDER BY {col} {direction}'
+
+    # OFFSET and LIMIT
+    if offset >= 0 and limit > 0:
+        sql = f'{sql} OFFSET {offset} ROWS FETCH NEXT {limit} ROWS ONLY'
+
+    print(sql)
+
+    db.cursor.execute(sql)
+    rows = db.cursor.fetchall()
+    cols = db.cursor.description
+
+    stations = []
+    for r in rows:
+        kwargs = {}
+        for (index, col) in enumerate(r):
+            kwargs[cols[index][0]] = col
+
+        stations.append(Station(**kwargs))
+
+    return stations
+
+
+# station count
+def count(db, search):
+    sql = '''
+            SELECT 
+                COUNT(Id)
+            FROM 
+                dbo.Stations
+        '''
+
+    if search != '':
+        like = '''
+            WHERE
+                Name Like '%{0}%'
+        '''.format(search)
+        sql = f'{sql} {like}'
+
+    db.cursor.execute(sql)
+    q = db.cursor.fetchone()
+
+    if q is None:
+        return None
+
+    return q[0]

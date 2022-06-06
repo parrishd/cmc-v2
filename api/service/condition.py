@@ -98,6 +98,9 @@ class ConditionService:
         if len(err) > 0:
             return jsonify({'status': 400, 'errors': err}), 400
 
+        if 'Order' in c.keys():
+            c['[Order]'] = c.pop('Order', None)
+
         # insert data
         try:
             _ = condition.update(db, cid, c)
