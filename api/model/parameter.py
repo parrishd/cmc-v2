@@ -143,17 +143,15 @@ def insert(db, param):
     return id
 
 
-def update(db, pid, param):
+def update(db, pid, params):
     sql = '''
             UPDATE dbo.Parameters SET
                 {0} = ?
             WHERE
                 Id = ?
-        '''.format(' = ?, '.join(param.keys()))
+        '''.format(' = ?, '.join(params.keys()))
 
-    print(sql)
-
-    db.cursor.execute(sql, *param.values(), pid)
+    db.cursor.execute(sql, *params.values(), pid)
     db.cursor.commit()
 
     return pid

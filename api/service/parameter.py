@@ -9,7 +9,7 @@ class ParameterService:
     fields = [
         'Id',
         'Name',
-        'Unit',
+        'Units',
         'Method',
         'Tier',
         'Matrix',
@@ -115,13 +115,13 @@ class ParameterService:
                 data[k] = json[k]
 
         # validate fields
-        c, err = self.validate(data, post=False)
+        params, err = self.validate(data, post=False)
         if len(err) > 0:
             return jsonify({'status': 400, 'errors': err}), 400
 
         # insert data
         try:
-            _ = parameter.update(db, pid, c)
+            _ = parameter.update(db, pid, params)
         except Exception as err:
             return jsonify({'status': 500, 'error': str(err)}), 403
 
