@@ -38,7 +38,7 @@ def get_condition_by(db, fields, by, value):
     return Condition(**kwargs)
 
 
-# get all groups paginated
+# get all conditions paginated
 def get_conditions(db, col, direction, offset, limit, search):
     # base SELECT
     sql = '''
@@ -67,15 +67,15 @@ def get_conditions(db, col, direction, offset, limit, search):
     rows = db.cursor.fetchall()
     cols = db.cursor.description
 
-    groups = []
+    conditions = []
     for r in rows:
         kwargs = {}
         for (index, col) in enumerate(r):
             kwargs[cols[index][0]] = col
 
-        groups.append(Condition(**kwargs))
+        conditions.append(Condition(**kwargs))
 
-    return groups
+    return conditions
 
 
 # conditions count

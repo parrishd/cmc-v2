@@ -61,6 +61,9 @@ def create_app(test_config=None):
     from .service import station
     station.StationService(app)
 
+    from .service import parameter
+    parameter.ParameterService(app)
+
     from .service.integration import benthic as benthic_integration
     benthic_integration.BenthicIntegrationService(app)
 
