@@ -42,14 +42,13 @@ def get_station_by(db, fields, by, value):
 
     db.cursor.execute(sql, value)
     q = db.cursor.fetchone()
+    cols = db.cursor.description
     if q is None:
         return None
 
-    idx = 0
     kwargs = {}
-    for f in fields:
-        kwargs[f] = q[idx]
-        idx += 1
+    for (index, col) in enumerate(q):
+        kwargs[cols[index][0]] = col
 
     return Station(**kwargs)
 
