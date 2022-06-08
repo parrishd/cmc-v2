@@ -4,6 +4,7 @@ from api.util import validation
 from api.model import parameter
 from api.middleware import role_validation
 
+import json
 
 class ParameterService:
     fields = [
@@ -86,6 +87,10 @@ class ParameterService:
         p = parameter.get_parameter_by(db, ['*'], 'Id', pid)
         if p is None:
             return jsonify({'status': 404, 'error': 'record not found'}), 404
+
+        # removing scientific notation
+        p.NonfatalUpperRange = float(p.NonfatalUpperRange)
+        p.NonfatalLowerRange = float(p.NonfatalLowerRange)
 
         return jsonify(p.__dict__), 200
 
@@ -215,12 +220,17 @@ class ParameterService:
         count = parameter.count(db, search)
         params = parameter.get_parameters(db, col, direction, page * limit, limit, search)
 
+        # removing scientific notation
+        for p in params:
+            p.NonfatalUpperRange = float(p.NonfatalUpperRange)
+            p.NonfatalLowerRange = float(p.NonfatalLowerRange)
+
         resp = {
             'total': count,
             'count': len(params),
             'page': page,
             'limit': limit if limit > 0 else count,
-            'data': [c.__dict__ for c in params]
+            'data': [p.__dict__ for p in params]
         }
 
         return jsonify(resp), 200
@@ -260,10 +270,16 @@ class ParameterService:
         if 'NonfatalUpperRange' in data and data['NonfatalUpperRange'] is not None:
             if not validation.isfloat(data['NonfatalUpperRange']):
                 errors.append('NonfatalUpperRange must be of type float')
+            else:
+                # force conversion back to float for db
+                data['NonfatalUpperRange'] = float(data['NonfatalUpperRange'])
 
         if 'NonfatalLowerRange' in data and data['NonfatalLowerRange'] is not None:
             if not validation.isfloat(data['NonfatalLowerRange']):
                 errors.append('NonfatalLowerRange must be of type float')
+            else:
+                # force conversion back to float for db
+                data['NonfatalLowerRange'] = float(data['NonfatalLowerRange'])
 
         if 'Status' in data and data['Status'] is not None:
             if not validation.isBool(data['Status']):
