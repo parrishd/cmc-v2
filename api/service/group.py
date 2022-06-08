@@ -93,7 +93,7 @@ class GroupService:
     # DELETE group
     def delete(self, db, gid, user_roles):
         # validate roles
-        if not role_validation.validate(self.group_list_service_roles, user_roles):
+        if not role_validation.validate(self.group_service_post_roles, user_roles):
             return jsonify({'status': 403, 'error': 'permission denied'}), 403
 
         try:
@@ -105,7 +105,7 @@ class GroupService:
     # PUT group
     def put(self, db, gid, user_id, user_roles):
         # validate roles
-        if not role_validation.validate(self.group_list_service_roles, user_roles):
+        if not role_validation.validate(self.group_service_post_roles, user_roles):
             return jsonify({'status': 403, 'error': 'permission denied'}), 403
 
         # parse out any invalid fields
@@ -157,7 +157,7 @@ class GroupService:
     # POST group
     def post(self, db, user_id, user_roles):
         # validate roles
-        if not role_validation.validate(self.group_list_service_roles, user_roles):
+        if not role_validation.validate(self.group_service_post_roles, user_roles):
             return jsonify({'status': 403, 'error': 'permission denied'}), 403
 
         # parse out any invalid fields

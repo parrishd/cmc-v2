@@ -37,7 +37,7 @@ class StationService:
     def __init__(self, app):
         self.station_service_get_roles = ['Admin', 'Officer', 'Member']
         self.station_service_delete_roles = ['Admin', 'Officer', 'Member']
-        app.route('/station/<gid>', methods=['GET', 'DELETE', 'PUT'])(self.station_service)
+        app.route('/station/<sid>', methods=['GET', 'DELETE', 'PUT'])(self.station_service)
 
         self.station_service_post_roles = ['Admin', 'Officer', 'Member']
         app.route('/station', methods=['POST'])(self.station_post_service)
@@ -45,7 +45,7 @@ class StationService:
         self.station_list_service_roles = ['Admin', 'Officer', 'Member']
         app.route('/station/list', methods=['GET'])(self.station_list_service)
 
-    def station_service(self, gid):
+    def station_service(self, sid):
         db = request.environ['db']
         if db is None:
             return jsonify({'error': 'database connection failed'})
@@ -57,32 +57,77 @@ class StationService:
 
         ur = request.environ['role']
 
-        if not validation.isint(gid):
+        if not validation.isint(sid):
             return jsonify({'error': 'invalid group id'})
 
         if request.method == 'GET':
-            return self.get(db, gid, ur)
-        #
-        # if request.method == 'DELETE':
-        #     return self.delete(db, gid, ur)
-        #
-        # if request.method == 'PUT':
-        #     return self.put(db, gid, uid, ur)
+            return self.get(db, sid, ur)
+
+        if request.method == 'DELETE':
+            return self.delete(db, sid, ur)
+
+        if request.method == 'PUT':
+            return self.put(db, sid, uid, ur)
 
         resp = {'status': 400, 'error': 'method not allowed'}
         return jsonify(resp), 400
 
     # GET station
-    def get(self, db, gid, user_roles):
+    def get(self, db, sid, user_roles):
         # validate roles
         if not role_validation.validate(self.station_list_service_roles, user_roles):
             return jsonify({'status': 403, 'error': 'permission denied'}), 403
 
-        g = station.get_station_by(db, ['*'], 'Id', gid)
+        g = station.get_station_by(db, ['*'], 'Id', sid)
         if g is None:
             return jsonify({'status': 404, 'error': 'record not found'}), 404
 
         return jsonify(g.__dict__), 200
+
+    # DELETE station
+    def delete(self, db, sid, user_roles):
+        # validate roles
+        if not role_validation.validate(self.station_service_post_roles, user_roles):
+            return jsonify({'status': 403, 'error': 'permission denied'}), 403
+
+        try:
+            g = station.delete(db, sid)
+            return jsonify({'status': 200, 'id': g}), 200
+        except Exception as err:
+            return jsonify({'status': 500, 'error': str(err)}), 403
+
+    # PUT station
+    def put(self, db, sid, user_id, user_roles):
+        # validate roles
+        if not role_validation.validate(self.station_service_post_roles, user_roles):
+            return jsonify({'status': 403, 'error': 'permission denied'}), 403
+
+        # parse out any invalid fields
+        json = request.json
+        data = {}
+        for k in json.keys():
+            if k in self.fields:
+                data[k] = json[k]
+
+        # validate fields
+        s, err = self.validate(data, post=False)
+        if len(err) > 0:
+            return jsonify({'status': 400, 'errors': err}), 400
+
+        # set user id
+        s['ModifiedBy'] = user_id
+
+        # set dates
+        date = datetime.strftime(datetime.now(), '%Y-%m-%dT%H:%M:%S')
+        s['ModifiedDate'] = date
+
+        # insert data
+        try:
+            _ = station.update(db, sid, s)
+        except Exception as err:
+            return jsonify({'status': 500, 'error': str(err)}), 403
+
+        return self.get(db, sid, user_roles)  # jsonify(g), 200
 
     # post services POST/PATCH
     def station_post_service(self):
@@ -97,11 +142,46 @@ class StationService:
 
         ur = request.environ['role']
 
-        # if request.method == 'POST':
-        #     return self.post(db, uid, ur)
+        if request.method == 'POST':
+            return self.post(db, uid, ur)
 
         resp = {'status': 400, 'error': 'method not allowed'}
         return jsonify(resp), 400
+
+    # POST group
+    def post(self, db, user_id, user_roles):
+        # validate roles
+        if not role_validation.validate(self.station_service_post_roles, user_roles):
+            return jsonify({'status': 403, 'error': 'permission denied'}), 403
+
+        # parse out any invalid fields
+        json = request.json
+        data = {}
+        for k in json.keys():
+            if k in self.fields:
+                data[k] = json[k]
+
+        # validate fields
+        s, err = self.validate(data, post=True)
+        if len(err) > 0:
+            return jsonify({'status': 400, 'errors': err}), 400
+
+        # set user id
+        s['CreatedBy'] = user_id
+        s['ModifiedBy'] = user_id
+
+        # set dates
+        date = datetime.strftime(datetime.now(), '%Y-%m-%dT%H:%M:%S')
+        s['CreatedDate'] = date
+        s['ModifiedDate'] = date
+
+        # insert data
+        try:
+            id = station.insert(db, s)
+        except Exception as err:
+            return jsonify({'status': 500, 'error': str(err)}), 403
+
+        return self.get(db, id, user_roles)
 
     # list service handlers
     def station_list_service(self):
@@ -154,3 +234,36 @@ class StationService:
         }
 
         return jsonify(resp), 200
+
+    @staticmethod
+    def validate(data, post=False):
+        errors = []
+
+        if post:
+            if 'Code' not in data:
+                errors.append('Code is required')
+
+            if 'Name' not in data:
+                errors.append('Name is required')
+
+        if 'Id' in data:
+            errors.append('Id should not be include')
+
+        if 'Status' in data and data['Status'] is not None:
+            if not validation.isBool(data['Status']):
+                errors.append('Status must be of type boolean')
+
+        if 'Tidal' in data and data['Tidal'] is not None:
+            if not validation.isBool(data['Tidal']):
+                errors.append('Tidal must be of type boolean')
+
+        if 'Lat' in data and data['Lat'] is not None:
+            if not validation.isfloat(data['Lat']):
+                errors.append('Lat must be of type float')
+
+        if 'Long' in data and data['Long'] is not None:
+            if not validation.isfloat(data['Long']):
+                errors.append('Long must be of type float')
+
+        return data, errors
+
