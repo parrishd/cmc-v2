@@ -4,6 +4,7 @@ from datetime import datetime
 from api.util import validation
 from api.model import station
 from api.middleware import role_validation
+from api.integration.chesapeakebay import ChesapeakeBayIntegration
 
 
 class StationService:
@@ -165,6 +166,18 @@ class StationService:
         s, err = self.validate(data, post=True)
         if len(err) > 0:
             return jsonify({'status': 400, 'errors': err}), 400
+
+        cb = ChesapeakeBayIntegration()
+        loc = cb.get([])
+        if loc is None:
+            return jsonify({'status': 400, 'errors': ['unable to perform location lookup - chesapeake bay api']}), 400
+
+        print(loc)
+
+        # merge loc data in
+        s = {**s, **loc}
+
+        print(s)
 
         # set user id
         s['CreatedBy'] = user_id
