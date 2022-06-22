@@ -7,7 +7,7 @@ class ChesapeakeBayIntegration:
     url = 'https://gis.chesapeakebay.net/ags/rest/services/geotagging/nad83/MapServer/identify'
 
     static_params = {
-        'geometry': '-76.3922220000,37.2172200000',
+        # 'geometry': '-76.3922220000,37.2172200000',
         'geometryType': 'esriGeometryPoint',
         # 'sr': '',
         'layers': 'all',
@@ -27,8 +27,10 @@ class ChesapeakeBayIntegration:
         'f': 'pjson'
     }
 
-    def get(self, params):
-        resp = requests.get(self.url, self.static_params)
+    def get(self, lat, lon):
+        params = {**self.static_params, **{'geometry': lon + ',' + lat}}
+
+        resp = requests.get(self.url, params)
 
         if resp.status_code == 200:
             try:
@@ -62,18 +64,18 @@ class ChesapeakeBayIntegration:
                                 cbseg = layer['value']
 
                 # make sure all of our data got set
-                if huc12 is None or fallLine is None or fips is None or cbseg is None:
-                    return None
+                # if huc12 is None or fallLine is None or fips is None or cbseg is None:
+                #     return None
 
                 # return values mapped to db cols
                 return {
-                    'Huc12': huc12['HUC_12'],
-                    'WaterBody': huc12['HUC_12_NAME'],
-                    'Huc6Name': huc12['HUC_6_NAME'],
+                    'Huc12': huc12['HUC_12'] if huc12 is not None and 'HUC_12' in huc12 else None,
+                    'WaterBody': huc12['HUC_12_NAME'] if huc12 is not None and 'HUC_12_NAME' in huc12 else None,
+                    'Huc6Name': huc12['HUC_6_NAME'] if huc12 is not None and 'HUC_6_NAME' in huc12 else None,
                     'Tidal': True if fallLine == 'below' else False,
-                    'Fips': fips['FIPS'],
-                    'CityCounty': fips['CoNameFull'],
-                    'State': fips['StName'],
+                    'Fips': fips['FIPS'] if fips is not None and 'FIPS' in fips else None,
+                    'CityCounty': fips['CoNameFull'] if fips is not None and 'CoNameFull' in fips else None,
+                    'State': fips['StName'] if fips is not None and 'StName' in fips else None,
                     'Cbseg': cbseg
                 }
 

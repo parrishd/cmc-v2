@@ -83,6 +83,10 @@ class StationService:
         if g is None:
             return jsonify({'status': 404, 'error': 'record not found'}), 404
 
+        # removing scientific notation
+        g.Lat = float(g.Lat)
+        g.Long = float(g.Long)
+
         return jsonify(g.__dict__), 200
 
     # DELETE station
@@ -167,26 +171,35 @@ class StationService:
         if len(err) > 0:
             return jsonify({'status': 400, 'errors': err}), 400
 
-        cb = ChesapeakeBayIntegration()
-        loc = cb.get([])
-        if loc is None:
-            return jsonify({'status': 400, 'errors': ['unable to perform location lookup - chesapeake bay api']}), 400
+        defLoc = {
+            'Huc12': None,
+            'WaterBody': None,
+            'Huc6Name': None,
+            'Tidal': False,
+            'Fips': None,
+            'CityCounty': None,
+            'State': None,
+            'Cbseg': None
+        }
 
-        print(loc)
+        if 'Lat' in s and 'Long' in s:
+            cb = ChesapeakeBayIntegration()
+            loc = cb.get(s['Lat'], s['Long'])
+            if loc is None:
+                loc = defLoc
+        else:
+            loc = defLoc
 
         # merge loc data in
-        s = {**s, **loc}
-
-        print(s)
-
-        # set user id
-        s['CreatedBy'] = user_id
-        s['ModifiedBy'] = user_id
-
-        # set dates
         date = datetime.strftime(datetime.now(), '%Y-%m-%dT%H:%M:%S')
-        s['CreatedDate'] = date
-        s['ModifiedDate'] = date
+        s = {
+            **s,
+            **loc,
+            'CreatedBy': user_id,
+            'ModifiedBy': user_id,
+            'CreatedDate': date,
+            'ModifiedDate': date
+        }
 
         # insert data
         try:
