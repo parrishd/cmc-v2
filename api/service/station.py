@@ -119,12 +119,33 @@ class StationService:
         if len(err) > 0:
             return jsonify({'status': 400, 'errors': err}), 400
 
-        # set user id
-        s['ModifiedBy'] = user_id
+        defLoc = {
+            'Huc12': None,
+            'WaterBody': None,
+            'Huc6Name': None,
+            'Tidal': False,
+            'Fips': None,
+            'CityCounty': None,
+            'State': None,
+            'Cbseg': None
+        }
 
-        # set dates
+        if 'Lat' in s and 'Long' in s:
+            cb = ChesapeakeBayIntegration()
+            loc = cb.get(s['Lat'], s['Long'])
+            if loc is None:
+                loc = defLoc
+        else:
+            loc = defLoc
+
+        # merge loc data in
         date = datetime.strftime(datetime.now(), '%Y-%m-%dT%H:%M:%S')
-        s['ModifiedDate'] = date
+        s = {
+            **s,
+            **loc,
+            'ModifiedBy': user_id,
+            'ModifiedDate': date
+        }
 
         # insert data
         try:

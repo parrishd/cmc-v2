@@ -8,6 +8,7 @@ class ChesapeakeBayIntegration:
 
     static_params = {
         # 'geometry': '-76.3922220000,37.2172200000',
+        # 'geometry': '-77.1810400000,40.2079200000,
         'geometryType': 'esriGeometryPoint',
         # 'sr': '',
         'layers': 'all',
